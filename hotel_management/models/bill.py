@@ -28,7 +28,14 @@ class BookingOrder(models.Model):
         ('new', 'New'),
         ('confirmed', 'Confirmed')
     ], string="Booking Status", default='new', required=True)
-
+    payment_status = fields.Selection(
+        [('unpaid', 'Chưa thanh toán'), ('paid', 'Đã thanh toán')],
+        string="Loại thanh toán",
+        default='unpaid',
+        readonly=True
+    )
+    payment_date = fields.Datetime(string="Ngày thanh toán", readonly=True)
+    payment_amount = fields.Float(string="Số tiền thanh toán", readonly=True)
 
     def action_confirm(self):
         self.state = 'confirmed'
@@ -83,6 +90,21 @@ class BookingOrder(models.Model):
                 if not other_bookings:
                     record.room_id.state = 'available'
         return super(BookingOrder, self).unlink()
+
+    def action_open_payment_wizard(self):
+        return {
+            'name': 'Thanh toán',
+            'type': 'ir.actions.act_window',
+            'res_model': 'booking.payment.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_booking_id': self.id,
+                'default_hotel_id': self.hotel_id.id,
+                'default_room_id': self.room_id.id,
+            }
+        }
+
 
 
 

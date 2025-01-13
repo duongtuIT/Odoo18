@@ -24,6 +24,7 @@
         'views/room_feature.xml',  # Views cho đặc điểm phòng
         'views/bill_view.xml',  # Views cho đơn đặt phòng
         'views/booking_pending.xml', # Views cho đơn đặt phòng đang chờ
+        'views/booking_payment.xml'
     ],
     'installable': True,
     'application': True,

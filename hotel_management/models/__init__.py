@@ -1,1 +1,1 @@
-from . import bill, hotel,room, room_feature
+from . import bill, hotel,room, room_feature, booking_payment
