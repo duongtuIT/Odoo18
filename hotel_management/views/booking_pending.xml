@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!-- Define the action to approve room booking -->
+        <record id="action_approve" model="ir.actions.server">
+            <field name="name">Duyệt Đặt Phòng</field>
+            <field name="type">ir.actions.server</field>
+            <field name="model_id" ref="model_booking_order"/>
+            <field name="binding_model_id" ref="model_booking_order"/>
+            <field name="state">code</field>
+            <field name="code">
+                 <![CDATA[
+                for booking in records:
+                    if booking.state == 'new':
+                        booking.action_confirm()
+                ]]>
+            </field>
+
+        </record>
+
+        <!-- Define list view for pending room bookings -->
+        <record id="view_room_booking_list_pending" model="ir.ui.view">
+            <field name="name">booking.order.list.pending</field>
+            <field name="model">booking.order</field>
+            <field name="type">list</field>
+            <field name="arch" type="xml">
+                <list string="Room Booking List">
+                    <field name="customer_name"/>
+                    <field name="hotel_id"/>
+                    <!-- <field name="room_id"/> -->
+                    <field name="room_name"/>
+                    <field name="check_in_date"/>
+                    <field name="check_out_date"/>
+                    <field name="state"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Define search view for pending room bookings -->
+        <record id="view_room_booking_search_pending" model="ir.ui.view">
+            <field name="name">booking.order.search.pending</field>
+            <field name="model">booking.order</field>
+            <field name="arch" type="xml">
+                <search string="Tìm kiếm Đặt Phòng">
+                    <filter name="filter_new" string="Đơn Mới" domain="[('state', '=', 'new')]" help="Hiển thị các đơn đặt phòng mới"/>
+                    <filter name="filter_confirmed" string="Đã Xác Nhận" domain="[('state', '=', 'confirmed')]" help="Hiển thị các đơn đã xác nhận"/>
+                    <field name="customer_name"/>
+                    <field name="state"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Define action for booking pending approval -->
+        <record id="action_booking_pending" model="ir.actions.act_window">
+            <field name="name">Booking Chờ Duyệt</field>
+            <field name="res_model">booking.order</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="view_room_booking_list_pending"/>
+            <field name="domain">[('state', '=', 'new')]</field>
+            <field name="search_view_id" ref="view_room_booking_search_pending"/>
+            <field name="context">{'search_default_filter_new': 1}</field>
+        </record>
+
+        <!-- Define the menu item for pending bookings -->
+         <menuitem id="menu_booking_pending" name="Booking Chờ Duyệt" parent="menu_room_booking_management" action="action_booking_pending"/>
+    </data>
+</odoo>
