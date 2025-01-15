@@ -8,16 +8,18 @@
                 <form string="Hotel Room">
                     <sheet>
                         <group>
-                            <field name="hotel_id"/>
-                            <field name="address" readonly="1"/>
-                            <field name="room_code"/>
-                            <field name="bed_type"/>
-                            <field name="price"/>
-                            <field name="state"/>
-                            <field name="last_booking_date"/>
-                        </group>
-                        <group>
-                            <field name="feature_ids" widget="many2many_tags"/>
+                            <group>
+                                <field name="hotel_id"/>
+                                <field name="address" readonly="1"/>
+                                <field name="room_code"/>
+                                <field name="bed_type"/>
+                            </group>
+                            <group>
+                                <field name="price"/>
+                                <field name="state"/>
+                                <field name="last_booking_date"/>
+                                <field name="feature_ids" widget="many2many_tags"/>
+                            </group>
                         </group>
                     </sheet>
                 </form>

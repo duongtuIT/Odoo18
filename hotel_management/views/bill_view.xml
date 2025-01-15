@@ -8,28 +8,36 @@
                 <form string="Booking Order">
                     <sheet>
                         <group>
-                            <field name="booking_code" invisible="1"/>
-                            <field name="customer_name"/>
-                            <field name="booking_date" />
-                            <field name="check_in_date"/>
-                            <field name="check_out_date"/>
-                        </group>
-                        <group>
-                            <field name="hotel_id"/>
-                            <field name="room_type"/>
-                            <field name="room_id" domain="[('hotel_id', '=', hotel_id), ('bed_type', '=', room_type)]" options="{'no_open': True}"/>
-                            <field name="room_name"/>
-                            <field name="state" />
-                            <field name="payment_status" readonly="1"/>
-                            <field name="payment_date" readonly="1"/>
-                            <field name="payment_amount" readonly="1"/>
+                            <group>
+                                <field name="booking_code" invisible="1"/>
+                                <field name="customer_name"/>
+                                <field name="booking_date" />
+                                <field name="check_in_date"/>
+                                <field name="check_out_date"/>
+                                <field name="rental_days"/>
+                                <field name="room_price"/>
+                                <field name="total_amount"/>
+                            </group>
+                            <group>
+                                <field name="hotel_id"/>
+                                <field name="room_type"/>
+                                <field name="room_id"
+                                       domain="[('hotel_id', '=', hotel_id), ('bed_type', '=', room_type)]"
+                                       options="{'no_open': True}"/>
+                                <field name="room_name"/>
+                                <field name="state" />
+                                <field name="payment_status" readonly="1"/>
+                                <field name="payment_date" readonly="1"/>
+                                <field name="payment_amount" readonly="1"/>
 
-                            <button name="action_open_payment_wizard"
-                                    string="Thanh toán"
-                                    type="object"
-                                    invisible="payment_status != 'unpaid'"/>
+                                <button name="action_open_payment_wizard"
+                                        string="Thanh toán"
+                                        type="object"
+                                        invisible="payment_status != 'unpaid'"/>
+                                <button name="action_create_invoice"
+                                        string="Create Invoice" type="object" class="btn-primary"/>
+                            </group>
                         </group>
-
                     </sheet>
                 </form>
             </field>

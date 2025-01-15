@@ -9,7 +9,7 @@
                     <group>
                         <field name="hotel_id" readonly="1"/>
                         <field name="room_id" readonly="1"/>
-                        <field name="payment_amount"/>
+                        <field name="payment_amount" readonly="1"/>
                     </group>
                     <footer>
                         <button string="Xác nhận" type="object" name="confirm_payment" class="btn-primary"/>
@@ -26,8 +26,8 @@
             <field name="domain">[('payment_status', '=', 'unpaid')]</field>
         </record>
         <menuitem id="menu_booking_payment"
-          name="Thanh toán"
-          parent="menu_room_booking_management"
-          action="action_booking_order_payment"/>
+                  name="Thanh toán"
+                  parent="menu_room_booking_management"
+                  action="action_booking_order_payment"/>
     </data>
 </odoo>

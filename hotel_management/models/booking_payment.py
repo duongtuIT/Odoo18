@@ -7,7 +7,7 @@ class BookingPaymentWizard(models.TransientModel):
     booking_id = fields.Many2one('booking.order', string="Đơn đặt phòng", readonly=True)
     hotel_id = fields.Many2one('hotel.management', string="Khách sạn", readonly=True)
     room_id = fields.Many2one('hotel.room', string="Phòng", readonly=True)
-    payment_amount = fields.Float(string="Số tiền thanh toán", required=True)
+    payment_amount = fields.Float(string="Số tiền thanh toán",related='booking_id.payment_amount',readonly=True)
 
     @api.constrains('payment_amount')
     def _check_payment_amount(self):
@@ -20,3 +20,4 @@ class BookingPaymentWizard(models.TransientModel):
             'payment_date': fields.Datetime.now(),
             'payment_amount': self.payment_amount
         })
+

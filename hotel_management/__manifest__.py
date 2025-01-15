@@ -11,7 +11,7 @@
     'author': 'Duong Tu',
     'website': 'https://yourwebsite.com',
     'category': 'Management',
-    'depends': ['base','hr'],
+    'depends': ['base','hr','sale'],
     'data': [
         'data/crons.xml',
         'security/security.xml',
