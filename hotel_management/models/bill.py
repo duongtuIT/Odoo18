@@ -252,6 +252,10 @@ class BookingOrder(models.Model):
             else:
                 record.payment_amount = record.total_amount
 
+    @api.model
+    def print_booking_report(self):
+        return self.env.ref('your_module.action_booking_order_report').report_action(self)
+
 
 
 

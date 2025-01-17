@@ -14,7 +14,8 @@
     'depends': ['base','hr','sale'],
     'data': [
         'data/crons.xml',
-
+        'reports/action_report_booking.xml',
+        'reports/report_booking_template.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
         'security/record_rule_hotel.xml',

@@ -1,0 +1,14 @@
+.page{
+    font-family: Consolas, monospace;
+    font-size: 15px;
+}
+.mt-5 table{
+    width: 100%;
+    border-collapse: collapse;
+}
+.mt-5 th, .mt-5 td{
+    padding: 8px;
+    border: 1px solid black;
+    text-align: center;
+    vertical-align: middle;
+}
