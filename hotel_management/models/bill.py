@@ -1,14 +1,13 @@
 from odoo import models, fields, api
 from datetime import date
-from odoo.exceptions import UserError
-
-
+from odoo.exceptions import UserError, ValidationError
+import random, string
 class BookingOrder(models.Model):
     _name = 'booking.order'
     _description = 'Booking Order'
 
     # Fields
-    booking_code = fields.Char(string="Booking Code", unique=True)
+    booking_code = fields.Char(string="Booking Code",  readonly=True, default=lambda self: self._generate_booking_code())
     customer_name = fields.Char(string="Customer Name", required=True)
     booking_date = fields.Date(string="Booking Date", default=date.today(), required=True)
     check_in_date = fields.Date(string="Check-in Date", required=True)
@@ -26,6 +25,12 @@ class BookingOrder(models.Model):
         domain="[('hotel_id', '=', hotel_id),('bed_type', '=', room_type)]"
     )
     room_price = fields.Float(related='room_id.price', string='Room Price', readonly=True)
+    room_total = fields.Float(
+        string="Room Total",
+        compute="_compute_room_total",
+        store=True,
+        readonly=True,
+    )
     room_name = fields.Char(string="Room Name", related="room_id.room_code", store=True)
     state = fields.Selection([
         ('new', 'New'),
@@ -48,176 +53,207 @@ class BookingOrder(models.Model):
         compute='_compute_total_amount',
         store=True
     )
+    tax_amount = fields.Float(
+        string="Tax Amount",
+        compute="_compute_tax_amount",
+        store=True,
+        readonly=True,
+    )
+    total_service_amount = fields.Float(string='Total Service Amount', compute='_compute_total_service_amount')
+    service_line = fields.One2many(
+        'custom.booking.service.line',  # Tên của mô hình con
+        'booking_id',  # Trường liên kết ở mô hình con
+        string="Service Lines"
+    )
 
     sale_order_id = fields.Many2one('sale.order', string='Sale Order', readonly=True)
 
-    def action_confirm(self):
-        self.state = 'confirmed'
-    @api.model
-    def create(self, vals):
-        # Kiểm tra và tự động tạo hotel_code nếu không có
-        if 'booking_code' not in vals:
-            last_bill = self.search([], order='booking_code desc', limit=1)
-            if last_bill:
-                last_code = int(last_bill.booking_code)
-                new_code = str(last_code + 1)
-            else:
-                new_code = '1'  # Nếu không có khách sạn nào, bắt đầu từ 1
-            vals['booking_code'] = new_code
-        # Cập nhật trạng thái phòng thành 'booked' khi tạo đơn đặt phòng
-        room = self.env['hotel.room'].browse(vals['room_id'])
-        if room:
-            overlap_booking = self.env['booking.order'].search([
-                ('room_id', '=', vals['room_id']),
-                ('check_in_date', '<=', vals['check_out_date']),
-                ('check_out_date', '>=', vals['check_in_date']),
-              ])
-            if overlap_booking:
-                raise models.ValidationError("The room is already booked for the selected dates.")
-
-        room.state = 'booked'  # Thay đổi trạng thái phòng thành 'booked'
-        room.last_booking_date = vals.get('booking_date', fields.Date.today())  # Cập nhật ngày đặt gần nhất
-        return super(BookingOrder, self).create(vals)
-
-    # Constraints
-    @api.constrains('check_in_date', 'check_out_date')
-    def _check_dates(self):
+    @api.depends('payment_amount', 'total_amount')
+    def _compute_tax_amount(self):
         for record in self:
-            if record.check_in_date > record.check_out_date:
-                raise models.ValidationError("Check-in date cannot be later than check-out date.")
-
-    @api.depends('room_id')
-    def _compute_room_code(self):
+            record.tax_amount = record.payment_amount - record.total_amount if record.payment_amount and record.total_amount else 0.0
+    @api.depends('room_price', 'rental_days')
+    def _compute_room_total(self):
         for record in self:
-            if record.room_id:
-                record.room_code = record.room_id.room_code
-
-    def unlink(self):
+            record.room_total = record.room_price * record.rental_days if record.room_price and record.rental_days else 0.0
+    @api.depends('service_line.subtotal')
+    def _compute_total_service_amount(self):
         for record in self:
-            if record.room_id:
-                # Kiểm tra xem còn đơn đặt phòng nào khác liên quan đến phòng này không
-                other_bookings = self.search([
-                    ('room_id', '=', record.room_id.id),
-                    ('id', '!=', record.id)  # Loại bỏ bản ghi hiện tại
-                ])
-                # Nếu không còn đơn đặt phòng nào khác, đặt trạng thái phòng là 'available'
-                if not other_bookings:
-                    record.room_id.state = 'available'
-        return super(BookingOrder, self).unlink()
+            record.total_service_amount = sum(line.subtotal for line in record.service_line)
 
-    def action_open_payment_wizard(self):
-        return {
-            'name': 'Thanh toán',
-            'type': 'ir.actions.act_window',
-            'res_model': 'booking.payment.wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_booking_id': self.id,
-                'default_hotel_id': self.hotel_id.id,
-                'default_room_id': self.room_id.id,
-            }
-        }
-
-    def action_create_invoice(self):
-        for record in self:
-            # Check if payment has already been made
-            if record.payment_status == 'paid':
-                raise UserError("Payment has already been made for this booking.")
-            # Check if a Sale Order already exists
-            if record.sale_order_id:
-                return {
-                    'type': 'ir.actions.act_window',
-                    'name': 'Sale Order',
-                    'view_mode': 'form',
-                    'res_model': 'sale.order',
-                    'res_id': record.sale_order_id.id,
-                }
-            # Search for the customer in res.partner
-            partner = self.env['res.partner'].search([('name', '=', record.customer_name)], limit=1)
-
-            # If no customer is found, create a new one
-            if not partner:
-                partner = self.env['res.partner'].create({
-                    'name': record.customer_name,
-                })
-
-            # Create Sale Order
-            sale_order = self.env['sale.order'].create({
-                'partner_id': partner.id,
-                'origin': record.booking_code,
-            })
-
-            # Generate dynamic product name
-            if record.room_id and record.check_in_date and record.check_out_date:
-                checkin = fields.Date.to_string(record.check_in_date)
-                checkout = fields.Date.to_string(record.check_out_date)
-                sale_name = f"{record.room_id.room_code}: {checkin} - {checkout}"
-            else:
-                sale_name = "Room Booking"
-
-            # Check if a product with the same name exists, otherwise create it
-            product = self.env['product.product'].search([('name', '=', sale_name)], limit=1)
-            if not product:
-                product = self.env['product.product'].create({
-                    'name': sale_name,
-                    'type': 'service',
-                    'list_price': record.total_amount,
-                })
-
-            # Calculate stay duration in days
-            if record.check_in_date and record.check_out_date:
-                duration = (record.check_out_date - record.check_in_date).days
-                if duration <= 0:
-                    raise UserError("Check-out date must be later than check-in date.")
-            else:
-                duration = 0
-
-            # Create Sale Order Line
-            self.env['sale.order.line'].create({
-                'order_id': sale_order.id,
-                'name': product.name,
-                'product_uom_qty': duration or 1,  # Ensure at least 1 unit is billed
-                'price_unit': record.room_price,
-                'product_id': product.id,
-            })
-
-            # Link Sale Order to Booking and Mark Payment as Paid
-            record.sale_order_id = sale_order.id
-            record.payment_status = 'unpaid'
-
-            return {
-                'type': 'ir.actions.act_window',
-                'name': 'Sale Order',
-                'view_mode': 'form',
-                'res_model': 'sale.order',
-                'res_id': sale_order.id,
-            }
+    @staticmethod
+    def _generate_booking_code():
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
     @api.depends('check_in_date', 'check_out_date')
     def _compute_rental_days(self):
         for record in self:
             if record.check_in_date and record.check_out_date:
                 delta = record.check_out_date - record.check_in_date
-                record.rental_days = max(delta.days, 0)
+                record.rental_days = delta.days if delta.days > 0 else 0
             else:
                 record.rental_days = 0
 
-    @api.depends('check_in_date', 'check_out_date', 'room_price')
+    @api.depends('rental_days', 'room_id', 'service_line')
     def _compute_total_amount(self):
         for record in self:
-            if record.rental_days < 1:
-                record.total_amount = record.room_price  # If less than 1 day, charge the room price only
-            else:
-                record.total_amount = record.rental_days * record.room_price  # Otherwise, calculate by days
+            room_cost = record.rental_days * record.room_id.price if record.room_id else 0
+            service_cost = sum(line.subtotal for line in record.service_line)
+            record.total_amount = room_cost + service_cost
 
-    @api.depends('total_amount', 'sale_order_id.amount_total')
-    def _compute_payment_amount(self):
+    @api.constrains('check_in_date', 'check_out_date')
+    def _check_date_order(self):
         for record in self:
-            if record.sale_order_id:
-                record.payment_amount = record.sale_order_id.amount_total
+            if record.check_in_date and record.check_out_date:
+                if record.check_in_date > record.check_out_date:
+                    raise ValidationError("Check-in date cannot be later than check-out date.")
+
+    def action_confirm(self):
+        self.state = 'confirmed'
+
+    def unlink(self):
+        for booking in self:
+            if booking.room_id:
+                booking.room_id.write({'state': 'available'})
+        return super(BookingOrder, self).unlink()
+
+    @api.model
+    def create(self, vals):
+        # Tạo Sale Order khi tạo booking
+        if vals.get('sale_order_id', False):
+            sale_order = self.env['sale.order'].browse(vals['sale_order_id'])
+        else:
+            # Lấy customer_name từ booking và tìm partner (khách hàng)
+            customer_name = vals.get('customer_name')
+            partner = self.env['res.partner'].search([('name', '=', customer_name)], limit=1)
+
+            if not partner:
+                # Nếu không tìm thấy partner, tạo partner mới
+                if not customer_name:
+                    raise ValidationError("Tên khách hàng không thể trống.")
+                partner = self.env['res.partner'].create({
+                    'name': customer_name,
+                    # Có thể thêm các trường khác như email, phone, v.v.
+                })
+
+            # Tạo Sale Order với chi tiết từ booking
+            sale_order = self.env['sale.order'].create({
+                'partner_id': partner.id,
+                'origin': vals.get('booking_code'),
+            })
+            vals['sale_order_id'] = sale_order.id
+
+        # Chỉ gọi phương thức create của cha sau khi xử lý các logic cần thiết
+        return super(BookingOrder, self).create(vals)
+
+    def _get_room_price(self, room_id):
+        room = self.env['hotel.room'].browse(room_id)
+        return room.price if room else 0
+
+    def action_create_inventory(self):
+        for record in self:
+            if record.payment_status == 'paid':
+                raise UserError("Thanh toán cho booking này đã được thực hiện.")
+
+            # Lấy hoặc tạo Sale Order từ booking
+            sale_order = record.sale_order_id
+            if not sale_order:
+                raise UserError("Không tìm thấy Đơn bán hàng cho booking này.")
+
+            # Tính toán số ngày thuê phòng
+            duration = (record.check_out_date - record.check_in_date).days
+            if duration <= 0:
+                raise UserError("Ngày trả phòng phải lớn hơn ngày nhận phòng.")
+
+            # Tạo sản phẩm phòng nếu chưa có
+            sale_name = f"{record.room_id.room_code} {record.check_in_date} - {record.check_out_date}" if record.room_id else "Đặt phòng"
+
+            room_product_template = self.env['product.template'].search([('name', '=', sale_name)], limit=1)
+            if not room_product_template:
+                room_product_template = self.env['product.template'].create({
+                    'name': sale_name,
+                    'list_price': record.total_amount,  # Giá trước thuế
+                    'taxes_id': [(6, 0, self.env['account.tax'].search([('type_tax_use', '=', 'sale')]).ids)],
+                })
+
+            # Tạo hoặc lấy sản phẩm gắn với template
+            room_product = self.env['product.product'].search([('product_tmpl_id', '=', room_product_template.id)],
+                                                              limit=1)
+            if not room_product:
+                room_product = self.env['product.product'].create({
+                    'product_tmpl_id': room_product_template.id,
+                })
+
+            # Cập nhật dòng sản phẩm phòng trong Sale Order
+            order_line = sale_order.order_line.filtered(lambda l: l.product_id == room_product)
+            if order_line:
+                order_line.write({
+                    'product_uom_qty': duration,
+                    'price_unit': record.room_id.price,
+                })
             else:
-                record.payment_amount = record.total_amount if record.total_amount else 0.0
+                self.env['sale.order.line'].create({
+                    'order_id': sale_order.id,
+                    'name': room_product.name,
+                    'product_uom_qty': duration,
+                    'price_unit': record.room_id.price,
+                    'product_id': room_product.id,
+                    'tax_id': [(6, 0, room_product.taxes_id.ids)],
+                })
+
+            # Thêm hoặc cập nhật dòng sản phẩm dịch vụ (nếu có)
+            if record.service_line:
+                for service in record.service_line:
+                    self.env['sale.order.line'].create({
+                        'order_id': sale_order.id,
+                        'product_id': service.product_id.id,
+                        'product_uom_qty': service.quantity,
+                        'price_unit': service.price_unit,
+                        'tax_id': [(6, 0, service.product_id.taxes_id.ids)],
+                    })
+
+            # Chỉ xác nhận đơn hàng nếu nó ở trạng thái dự thảo
+            if sale_order.state == 'draft':
+                sale_order.action_confirm()
+
+            # Tính tổng tiền cho Sale Order
+            sale_order.amount_total = sum(line.price_total for line in sale_order.order_line)
+
+            # Cập nhật thông tin thanh toán
+            record.payment_status = 'paid'
+            record.payment_date = fields.Date.today()
+            record.payment_amount = sale_order.amount_total
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Đơn Bán Hàng',
+            'view_mode': 'form',
+            'res_model': 'sale.order',
+            'res_id': sale_order.id,
+        }
+
+    def action_confirm_payment(self):
+        self.ensure_one()
+        if self.payment_status == 'paid':
+            raise ValidationError("Payment has already been confirmed for this booking.")
+        self.payment_status = 'paid'
+        self.payment_date = fields.Date.today()  # You can also use fields.Datetime.today() if you need the exact timestamp
+
+    @api.depends('total_amount')
+    def _compute_total_with_tax(self):
+        for record in self:
+            if record.room_id:
+                taxes = record.room_id.taxes_id.compute_all(
+                    record.total_amount,
+                    currency=record.env.company.currency_id,
+                    quantity=1.0
+                )
+                record.payment_amount = taxes['total_included']
+            else:
+                record.payment_amount = record.total_amount
+
+
+
 
 
 

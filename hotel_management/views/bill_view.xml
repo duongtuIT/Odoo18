@@ -5,38 +5,62 @@
             <field name="name">booking.order.form</field>
             <field name="model">booking.order</field>
             <field name="arch" type="xml">
-                <form string="Booking Order">
+                <form string="Room Booking">
                     <sheet>
-                        <group>
+                        <field name="payment_status" widget="statusbar" statusbar_visible="unpaid,paid" />
+                        <group string="Thông tin đặt phòng">
                             <group>
-                                <field name="booking_code" invisible="1"/>
+                                <field name="booking_code" readonly="1"/>
                                 <field name="customer_name"/>
-                                <field name="booking_date" />
-                                <field name="check_in_date"/>
-                                <field name="check_out_date"/>
-                                <field name="rental_days"/>
-                                <field name="room_price"/>
-                                <field name="total_amount"/>
-                            </group>
-                            <group>
+                                <field name="booking_date"/>
                                 <field name="hotel_id"/>
                                 <field name="room_type"/>
-                                <field name="room_id"
-                                       domain="[('hotel_id', '=', hotel_id), ('bed_type', '=', room_type)]"
-                                       options="{'no_open': True}"/>
+                                <field name="room_id" domain="[('hotel_id', '=', hotel_id), ('state', '=', 'available')]"/>
                                 <field name="room_name"/>
-                                <field name="state" />
-                                <field name="payment_status" readonly="1"/>
-                                <field name="payment_date" readonly="1"/>
-                                <field name="payment_amount" readonly="1"/>
-
-                                <button name="action_open_payment_wizard"
-                                        string="Thanh toán"
-                                        type="object"
-                                        invisible="payment_status != 'unpaid'"/>
-                                <button name="action_create_invoice"
-                                        string="Create Invoice" type="object" class="btn-primary"/>
                             </group>
+                            <group>
+                                <field name="check_in_date"/>
+                                <field name="check_out_date"/>
+                                <field name="rental_days" readonly="1"/>
+                                <field name="state" readonly="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Dịch vụ">
+                                <field name="service_line">
+                                    <list editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="quantity"/>
+                                        <field name="price_unit"/>
+                                        <field name="subtotal" readonly="1"/>
+                                    </list>
+                                    <form>
+                                        <group>
+                                            <field name="product_id"/>
+                                            <field name="quantity"/>
+                                            <field name="price_unit"/>
+                                            <field name="subtotal" readonly="1"/>
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                        </notebook>
+                        <group string="Thông tin thanh toán">
+                            <field name="payment_status" readonly="1"/>
+                            <field name="payment_date" readonly="1"/>
+                            <field name="room_price" readonly="1"/>
+                            <field name="rental_days" readonly="1"/>
+                            <field name="room_total" readonly="1"/>
+                            <field name="total_service_amount" readonly="1"/>
+                            <field name="total_amount" readonly="1"/>
+                            <field name="tax_amount" readonly="1"/>
+                            <field name="payment_amount" readonly="1"/>
+                            <field name="sale_order_id" readonly="1" widget="many2one"/>
+                        </group>
+                        <group string="Hoạt động">
+                            <button name="action_confirm" string="Xác nhận" type="object" class="btn-primary" invisible="payment_status != 'unpaid'"/>
+                            <button name="action_confirm_payment" type="object" string="Confirm Payment" class="btn-primary" invisible="payment_status != 'unpaid'"/>
+                            <button name="action_create_inventory" type="object" string="Create Inventory" class="btn-secondary" invisible="payment_status != 'unpaid'"/>
                         </group>
                     </sheet>
                 </form>
@@ -48,17 +72,17 @@
             <field name="model">booking.order</field>
             <field name="arch" type="xml">
                 <list>
-                    <!-- <field name="booking_code"/> -->
+                    <field name="booking_code"/>
                     <field name="customer_name"/>
-                    <field name="hotel_id"/>
-                    <!-- <field name="room_id"/> -->
-                    <field name="room_name"/>
+                    <field name="booking_date"/>
                     <field name="check_in_date"/>
                     <field name="check_out_date"/>
+                    <field name="rental_days"/>
+                    <field name="room_name"/>
+                    <field name="total_amount"/>
                     <field name="state"/>
-                    <field name="payment_status" readonly="1"/>
-                    <field name="payment_date" readonly="1"/>
-                    <field name="payment_amount" readonly="1"/>
+                    <field name="payment_status"/>
+                    <field name="sale_order_id" widget="many2one"/>
                 </list>
             </field>
         </record>
