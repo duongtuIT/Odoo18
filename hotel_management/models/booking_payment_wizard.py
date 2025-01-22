@@ -10,8 +10,9 @@ class BookingPaymentWizard(models.TransientModel):
     customer_name = fields.Char(string="Tên khách hàng", readonly=True)
     payment_amount = fields.Float(string="Số tiền thanh toán", readonly=True)
     service_total = fields.Float(string="Tổng dịch vụ", readonly=True)
-    total_amount = fields.Float(string="Tổng phòng", readonly=True)
+    room_total = fields.Float(string="Tổng phòng", readonly=True)
     room_code = fields.Char(string="Tên phòng", readonly=True)
+
     @api.model
     def default_get(self, fields):
         """ Tự động lấy thông tin từ booking_id khi mở wizard """
@@ -27,7 +28,7 @@ class BookingPaymentWizard(models.TransientModel):
                 'customer_name': booking.customer_name,
                 'payment_amount': booking.payment_amount,  # Giá trị thanh toán mặc định
                 'service_total': booking.service_total,
-                'total_amount': booking.total_amount,
+                'room_total': booking.room_total,
             })
         return res
 
