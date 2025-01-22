@@ -5,16 +5,21 @@ class BookingServiceLine(models.Model):
     _name = 'custom.booking.service.line'
     _description = 'Booking Service Line'
 
-    booking_id = fields.Many2one('booking.order', string="Booking", required=True, ondelete='cascade')
+    booking_id = fields.Many2one('booking.order', string="Booking", ondelete='cascade')
     product_id = fields.Many2one('product.product', string="Service", required=True)
     quantity = fields.Integer(string="Quantity", default=1, store=True)
     price_unit = fields.Float(string="Unit Price", related="product_id.list_price", readonly=True)
     subtotal = fields.Float(string="Subtotal", compute="_compute_subtotal", store=True)
+    service_order_id = fields.Many2one(
+        'customer.service.order',
+        string="Service Order", ondelete='cascade'
+    )
 
     @api.depends('quantity', 'price_unit')
     def _compute_subtotal(self):
         for line in self:
             line.subtotal = line.quantity * line.price_unit
+
 
     def create_sale_order_lines(self):
         for line in self:

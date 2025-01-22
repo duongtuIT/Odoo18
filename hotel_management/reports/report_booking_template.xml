@@ -4,7 +4,112 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
+                    <style>
+                        body {
+                            font-family: 'Arial', sans-serif;
+                            font-size: 18px;
+                            color: #333;
+                            line-height: 1.6;
+                        }
 
+                        h2, h4 {
+                            color: #2F4F4F; /* Màu xanh đậm */
+                            text-transform: uppercase;
+                            margin-bottom: 10px;
+                        }
+
+                        h2 {
+                            font-size: 22px;
+                            font-weight: bold;
+                            text-align: center;
+                        }
+
+                        h4 {
+                            font-size: 16px;
+                            font-weight: bold;
+                            margin-top: 20px;
+                            margin-bottom: 15px;
+                        }
+
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                        }
+
+                        table.table-borderless td {
+                            border: none;
+                            padding: 5px 0;
+                        }
+
+                        table.table-bordered2 th {
+                            background-color: #F4A460; /* Màu nền cam nhạt */
+                            color: white;
+                            font-size: 14px;
+                            text-transform: uppercase;
+                            text-align: left;
+                            padding: 8px;
+                        }
+
+                        table.table-bordered2 td {
+                            border: 1px solid #ddd; /* Đường viền nhạt */
+                            padding: 8px;
+                            font-size: 14px;
+                            text-align: left;
+                        }
+
+                        table.table-bordered2 tr:nth-child(even) {
+                            background-color: #f9f9f9; /* Màu nền xám nhạt cho dòng chẵn */
+                        }
+
+                        table.table-bordered2 tr:nth-child(odd) {
+                            background-color: #ffffff; /* Màu nền trắng cho dòng lẻ */
+                        }
+
+                        .text-center {
+                            text-align: center;
+                        }
+
+                        .mt-4 {
+                            margin-top: 20px;
+                        }
+
+                        .mt-5 {
+                            margin-top: 40px;
+                        }
+
+                        .row {
+                            display: flex;
+                            justify-content: space-between;
+                        }
+
+                        .col-6 {
+                            width: 48%;
+                        }
+
+                        .col-6 p {
+                            margin: 0;
+                            font-size: 14px;
+                        }
+
+                        p {
+                            margin: 5px 0;
+                        }
+
+                        strong {
+                            color: #000; /* Màu đậm */
+                        }
+
+                        .signature {
+                            margin-top: 50px;
+                        }
+
+                        .signature p {
+                            margin-top: 50px;
+                        }
+                    </style>
+
+                    <body>
                     <div class="page">
                         <!-- Header -->
                         <div class="text-center">
@@ -59,10 +164,7 @@
                                         <td><strong>Ngày check-out:</strong></td>
                                         <td><span t-field="o.check_out_date"/></td>
                                     </tr>
-                                    <tr>
-                                        <td><strong>Số ngày thuê:</strong></td>
-                                        <td><span t-field="o.rental_days"/> ngày</td>
-                                    </tr>
+
                                 </table>
                             </div>
                         </div>
@@ -111,22 +213,43 @@
                             <h4>THÔNG TIN THANH TOÁN</h4>
                             <table class="table table-borderless">
                                 <tr>
-                                    <td width="30%"><strong>Giá phòng:</strong></td>
+                                    <td width="30%"><strong>Giá ngày trong tuần:</strong></td>
                                     <td>
-                                        <span t-field="o.room_price" t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/>
+                                        <span t-field="o.weekday_price"
+                                              t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Số ngày thuê:</strong></td>
+                                    <td><strong>Giá ngày cuối tuần:</strong></td>
                                     <td>
-                                        <span t-field="o.rental_days"/> ngày
+                                        <span t-field="o.weekend_price"
+                                              t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/>
                                     </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Số ngày trong tuần:</strong></td>
+                                    <td><span t-field="o.weekday_days"/> ngày</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Số ngày cuối tuần:</strong></td>
+                                    <td><span t-field="o.weekend_days"/> ngày</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Số ngày thuê:</strong></td>
+                                    <td><span t-field="o.total_days"/> ngày</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tiền trong tuần:</strong></td>
+                                    <td><span t-field="o.weekday_amount" t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tiền cuối tuần:</strong></td>
+                                    <td><span t-field="o.weekend_amount" t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Tổng tiền phòng:</strong></td>
                                     <td>
-                                        <t t-set="room_total" t-value="o.room_price * o.rental_days"/>
-                                        <span t-esc="room_total" t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/>
+                                        <span t-field="o.room_total" t-options='{"widget": "monetary", "display_currency": user.company_id.currency_id}'/>
                                     </td>
                                 </tr>
                                 <tr>
@@ -174,6 +297,7 @@
                             </div>
                         </div>
                     </div>
+                    </body>
                 </t>
             </t>
         </t>

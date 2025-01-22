@@ -15,7 +15,8 @@
                                 <field name="bed_type"/>
                             </group>
                             <group>
-                                <field name="price"/>
+                                <field name="weekday_price"/>
+                                <field name="weekend_price"/>
                                 <field name="state"/>
                                 <field name="last_booking_date"/>
                                 <field name="feature_ids" widget="many2many_tags"/>
@@ -34,7 +35,8 @@
                     <field name="room_code"/>
                     <field name="hotel_id"/>
                     <field name="bed_type"/>
-                    <field name="price"/>
+                    <field name="weekday_price"/>
+                    <field name="weekend_price"/>
                     <field name="state"/>
                     <field name="feature_ids" widget="many2many_tags"/>
                     <field name="last_booking_date"/>
@@ -49,7 +51,8 @@
                     <field name="room_code"/>
                     <field name="hotel_id"/>
                     <field name="bed_type"/>
-                    <field name="price"/>
+                    <field name="weekday_price"/>
+                    <field name="weekend_price"/>
                     <field name="state"/>
                 </search>
             </field>

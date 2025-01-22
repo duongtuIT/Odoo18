@@ -11,3 +11,5 @@ class AvailableRoomsWizard(models.TransientModel):
         action = self.env.ref('hotel_management.action_hotel_room').read()[0]
         action['domain'] = [('id', 'in', available_rooms.ids)]
         return action
+
+

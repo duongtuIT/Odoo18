@@ -1,0 +1,61 @@
+<odoo>
+    <data>
+        <template id="report_available_room">
+            <t t-call="web.html_container">
+                 <t t-call="web.external_layout">
+                     <t t-set="head_styles">
+                        <style>
+                            * {
+                                font-family: "DejaVu Sans", sans-serif;
+                            }
+                        </style>
+                    </t>
+                    <div>
+                        <h2>Báo Cáo Phòng Trống</h2>
+
+                        <t t-if="docs">
+                            <table class="table table-bordered2">
+                            <thead>
+                                <tr>
+                                    <th>Mã Phòng</th>
+                                    <th>Loại Giường</th>
+                                    <th>Giá Ngày Thường</th>
+                                    <th>Giá Cuối Tuần</th>
+                                    <th>Trạng Thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="docs" t-as="room">
+                                    <tr>
+                                        <td><t t-esc="room.room_code"/></td>
+                                        <td><t t-esc="{
+                                            'single': 'Single Bed',
+                                            'double': 'Double Bed'
+                                        }.get(room.bed_type, 'Unknown')"/></td>
+                                        <td><t t-esc="room.weekday_price"/></td>
+                                        <td><t t-esc="room.weekend_price"/></td>
+                                        <td><t t-esc="room.state"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        </t>
+                    </div>
+                 </t>
+            </t>
+        </template>
+
+
+        <!-- Report Action -->
+        <record id="action_report_available_room" model="ir.actions.report">
+            <field name="name">Báo Cáo Phòng Trống</field>
+            <field name="model">hotel.room</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">hotel_management.report_available_room</field>
+            <field name="report_file">hotel_management.report_available_room</field>
+            <field name="print_report_name">'Báo cáo Phòng Trống'</field>
+            <field name="binding_model_id" ref="model_hotel_room"/>
+            <field name="binding_type">report</field>
+        </record>
+    </data>
+</odoo>

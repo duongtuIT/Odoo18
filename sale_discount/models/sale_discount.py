@@ -3,7 +3,8 @@ from odoo import models, fields, api
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    x_discount = fields.Float(string="Discount", default=0.0, help="Direct discount on the unit price.")
+    x_discount = fields.Float(string="Discount", default=0.0,
+                              help="Direct discount on the unit price.")
 
     def _prepare_base_line_for_taxes_computation(self, **kwargs):
         self.ensure_one()  # Đảm bảo rằng chỉ có một bản ghi

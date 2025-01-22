@@ -6,8 +6,26 @@
             <field name="model">booking.order</field>
             <field name="arch" type="xml">
                 <form string="Room Booking">
-                    <sheet>
+                    <header>
                         <field name="payment_status" widget="statusbar" statusbar_visible="unpaid,paid" />
+                         <style>
+                            .btn-style{
+                                width: 80px;
+                                text-align: center;
+                                padding: 5px 0;
+                                margin-right: 15px;
+                            }
+                        </style>
+                        <div class="o_horizontal" style="margin-top: 10px;">
+                            <button name="action_confirm_booking" string="Confirm" type="object"
+                                    class="btn-info btn-style" invisible="payment_status != 'unpaid'"/>
+                            <button name="action_create_inventory" string="Inventory" type="object"
+                                    class="btn-warning btn-style" invisible="payment_status != 'unpaid'"/>
+                            <button name="action_confirm_payment" string="Pay" type="object"
+                                    class="btn-success btn-style" invisible="payment_status != 'unpaid'"/>
+                        </div>
+                    </header>
+                    <sheet>
                         <group string="Thông tin đặt phòng">
                             <group>
                                 <field name="booking_code" readonly="1"/>
@@ -55,11 +73,11 @@
                                 <field name="weekday_price" readonly="1"/>
                                 <field name="weekday_days" readonly="1"/>
                                 <field name="weekday_amount" readonly="1"/>
-                                <p>"-------------------------------------"</p>
+                                <p>-------------------------------------</p>
                                 <field name="weekend_price" readonly="1"/>
                                 <field name="weekend_days" readonly="1"/>
                                 <field name="weekend_amount" readonly="1"/>
-                                <p>"-------------------------------------"</p>
+                                <p>-------------------------------------</p>
                                 <field name="total_days" readonly="1"/>
                                 <field name="room_total" readonly="1"/>
                             </group>
@@ -72,15 +90,6 @@
                                 <field name="payment_amount" readonly="1"/>
                                 <field name="sale_order_id" readonly="1" widget="many2one"/>
                             </group>
-
-                        </group>
-                        <group string="Hoạt động">
-                            <button name="action_confirm_employee" string="Xác nhận" type="object"
-                                    class="btn-primary" invisible="payment_status != 'unpaid'"/>
-                            <button name="action_confirm_payment" type="object" string="Confirm Payment"
-                                    class="btn-primary" invisible="payment_status != 'unpaid'"/>
-                            <button name="action_create_inventory" type="object" string="Create Inventory"
-                                    class="btn-secondary" invisible="payment_status != 'unpaid'"/>
 
                         </group>
                     </sheet>
@@ -105,6 +114,8 @@
                     <field name="payment_status"/>
                     <field name="payment_amount"/>
                     <field name="sale_order_id" widget="many2one"/>
+                    <button name="action_confirm_payment" type="object" string="Pay"
+                                    class="btn-success" invisible="payment_status != 'unpaid'"/>
                 </list>
             </field>
         </record>
